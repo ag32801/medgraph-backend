@@ -38,7 +38,6 @@ function SymptomChecker() {
             const results = await checkSymptoms(symptomNames);
             console.log('Results:', results);
             setSuggestions(results);
-            // Clear previous medicines when new results come
             setMedicinesMap({});
         } catch (error) {
             console.error('Error checking symptoms:', error);
@@ -48,23 +47,12 @@ function SymptomChecker() {
     };
 
     const fetchMedicinesForDisease = async (diseaseName) => {
-        console.log("=== Clicked on disease ===", diseaseName); // Add this
+        if (medicinesMap[diseaseName]) return;
+        if (loadingMedicines[diseaseName]) return;
 
-        if (medicinesMap[diseaseName]) {
-            console.log("Already loaded medicines for:", diseaseName);
-            return;
-        }
-        if (loadingMedicines[diseaseName]) {
-            console.log("Already loading medicines for:", diseaseName);
-            return;
-        }
-
-        console.log("Fetching medicines for:", diseaseName);
         setLoadingMedicines(prev => ({ ...prev, [diseaseName]: true }));
         try {
             const medicines = await fetchMedicinesByDisease(diseaseName);
-            console.log("Medicines received:", medicines); // Add this
-            console.log("Number of medicines:", medicines.length); // Add this
             setMedicinesMap(prev => ({ ...prev, [diseaseName]: medicines }));
         } catch (error) {
             console.error('Error fetching medicines:', error);
@@ -76,18 +64,32 @@ function SymptomChecker() {
     const customStyles = {
         control: (base) => ({
             ...base,
-            minHeight: '42px',
+            minHeight: '44px',
+            borderRadius: '12px',
+            borderColor: '#e2e8f0',
+            boxShadow: 'none',
+            '&:hover': {
+                borderColor: '#3b82f6'
+            }
         }),
+        menu: (base) => ({
+            ...base,
+            borderRadius: '12px',
+            overflow: 'hidden'
+        }),
+        option: (base, state) => ({
+            ...base,
+            backgroundColor: state.isFocused ? '#eef2ff' : 'white',
+            color: '#1e293b'
+        })
     };
 
     return (
-        <div style={{ padding: '20px', maxWidth: '600px' }}>
+        <div className="symptom-checker">
             <h2>Symptom Checker</h2>
 
-            <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
-                    Select your symptoms:
-                </label>
+            <div className="select-container">
+                <label className="label">Select your symptoms:</label>
                 <Select
                     options={symptoms}
                     isMulti
@@ -98,97 +100,54 @@ function SymptomChecker() {
                 />
             </div>
 
-            <div style={{ marginBottom: '20px' }}>
-                <p><strong>Selected symptoms:</strong> {selectedSymptoms.length}</p>
-                <button
-                    onClick={handleCheck}
-                    disabled={selectedSymptoms.length === 0 || loading}
-                    style={{
-                        padding: '10px 20px',
-                        backgroundColor: selectedSymptoms.length === 0 ? '#ccc' : '#007bff',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: selectedSymptoms.length === 0 ? 'not-allowed' : 'pointer',
-                        fontSize: '16px'
-                    }}
-                >
-                    {loading ? 'Checking...' : 'Check Symptoms'}
-                </button>
+            <div className="selected-count">
+                <p>Selected symptoms:</p>
+                <strong>{selectedSymptoms.length}</strong>
             </div>
 
+            <button
+                className="check-button"
+                onClick={handleCheck}
+                disabled={selectedSymptoms.length === 0 || loading}
+            >
+                {loading ? 'Checking...' : 'Check Symptoms'}
+            </button>
+
             {suggestions.length > 0 && (
-                <div>
+                <div className="results-section">
                     <h3>📋 Possible diseases:</h3>
-                    <div style={{ display: 'grid', gap: '15px' }}>
+                    <div>
                         {suggestions.map((disease, index) => (
                             <div
                                 key={index}
-                                style={{
-                                    border: '1px solid #ddd',
-                                    borderRadius: '8px',
-                                    padding: '15px',
-                                    backgroundColor: '#f9f9f9',
-                                    cursor: 'pointer',
-                                    transition: 'box-shadow 0.2s'
-                                }}
+                                className="disease-card"
                                 onClick={() => fetchMedicinesForDisease(disease.diseaseName)}
-                                onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)'}
-                                onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
                             >
-                                <h4 style={{ margin: '0 0 10px 0' }}>{disease.diseaseName}</h4>
+                                <h4>{disease.diseaseName}</h4>
                                 <p><strong>Matched symptoms:</strong> {disease.matchedSymptoms.join(', ')}</p>
                                 <p><strong>Match count:</strong> {disease.matchCount}</p>
 
-                                {/* Medicines section */}
+                                {/* Medicine Suggestion */}
                                 {medicinesMap[disease.diseaseName] && medicinesMap[disease.diseaseName].length > 0 && (
-                                    <div style={{
-                                        marginTop: '15px',
-                                        padding: '15px',
-                                        background: 'linear-gradient(135deg, #f0f9ff 0%, #e6f4ff 100%)',
-                                        borderRadius: '12px',
-                                        border: '1px solid #bae6fd',
-                                        boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
-                                    }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                                            <span style={{ fontSize: '20px' }}></span>
-                                            <strong style={{ fontSize: '16px', color: '#0369a1' }}>Suggestion:</strong>
-                                        </div>
-                                        <p style={{ margin: '0 0 10px 0', color: '#0c4a6e', fontStyle: 'italic' }}>
-                                            Based on your symptoms, you might find these medications helpful for {disease.diseaseName}:
-                                        </p>
-                                        <ul style={{ margin: '8px 0 0 20px', paddingLeft: '0', listStyleType: 'none' }}>
+                                    <div className="medicine-suggestion">
+                                        <h5>💡 SUGGESTION</h5>
+                                        <p>Based on your symptoms, you might find these medications helpful for {disease.diseaseName}:</p>
+                                        <ul className="medicine-list">
                                             {medicinesMap[disease.diseaseName].map((medicine, idx) => (
-                                                <li key={idx} style={{
-                                                    marginBottom: '8px',
-                                                    padding: '6px 0 6px 24px',
-                                                    position: 'relative'
-                                                }}>
-                    <span style={{
-                        position: 'absolute',
-                        left: '0',
-                        color: '#0ea5e9',
-                        fontWeight: 'bold'
-                    }}>💊</span>
-                                                    <span style={{ color: '#334155' }}>{medicine.name}</span>
+                                                <li key={idx}>
+                                                    <span className="medicine-icon">💊</span>
+                                                    <span>{medicine.name}</span>
                                                 </li>
                                             ))}
                                         </ul>
-                                        <div style={{
-                                            marginTop: '12px',
-                                            fontSize: '12px',
-                                            color: '#6b7280',
-                                            borderTop: '1px dashed #bae6fd',
-                                            paddingTop: '8px',
-                                            textAlign: 'center'
-                                        }}>
+                                        <div className="disclaimer">
                                             ⚕️ Always consult a healthcare professional before taking medication
                                         </div>
                                     </div>
                                 )}
 
                                 {loadingMedicines[disease.diseaseName] && (
-                                    <div style={{ marginTop: '12px', color: '#666' }}>
+                                    <div className="loading-medicines">
                                         ⏳ Loading medicines...
                                     </div>
                                 )}
