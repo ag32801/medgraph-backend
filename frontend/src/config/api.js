@@ -1,12 +1,6 @@
 // API configuration
 const getApiBaseUrl = () => {
-  // In development, use localhost
-  if (import.meta.env.DEV) {
-    return 'http://localhost:8081';
-  }
-
-  // In production (Docker), use the environment variable or backend service name
-  return import.meta.env.VITE_API_URL || 'http://backend:8080';
+  return import.meta.env.VITE_API_URL || 'http://localhost:8080';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
